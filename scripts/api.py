@@ -32,7 +32,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             description="Unload current model before merging to save memory",
         ),
         merge_method: str = fastapi.Body(title="Merge method"),
-        sdxl: bool = fastapi.Body(False, title="SDXL option")
+        sdxl: bool = fastapi.Body(False, title="SDXL option"),
         model_a: str = fastapi.Body(title="Path to model A"),
         model_b: str = fastapi.Body(title="Path to model B"),
         model_c: str = fastapi.Body(None, title="Path to model C"),
