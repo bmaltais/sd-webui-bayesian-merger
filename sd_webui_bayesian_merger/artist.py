@@ -129,9 +129,26 @@ def draw_unet(
 
     weight_id = 0
     bl = (0.0, 0.0)
-    for y, x in itertools.product(range(4), range(3)):
+    for y, x in itertools.product(range(3), range(3)):  # Adjusted to 3x3 for 9 'in' blocks
         weight_id, bl = in_block(x, y, weights, weight_id, bl, ax)
 
+    # base_alpha
+    ba_bl = (bl[0] + MIDDLE_W / 2 - BASE_W / 2, bl[1] + MIDDLE_H + BASE_H_V_D)
+    patch = block_patch(
+        ba_bl,
+        BASE_W,
+        BASE_H,
+        PAD,
+        get_color(base_alpha),
+    )
+    ax.add_artist(patch)
+    blt = (bl[0] + MIDDLE_W / 2, ba_bl[1] - TEXT_V_D)
+    block_text(blt, "base_alpha")
+
+    ax.relim()
+    ax.autoscale_view()
+    ax.set_axis_off()
+    
     # middle
     bl_x, bl_y = bl
     bl_x += MIDDLE_H_D
@@ -151,21 +168,8 @@ def draw_unet(
     block_text(blt, weight_id)
     weight_id += 1
 
-    # base_alpha
-    ba_bl = (bl[0] + MIDDLE_W / 2 - BASE_W / 2, bl[1] + MIDDLE_H + BASE_H_V_D)
-    patch = block_patch(
-        ba_bl,
-        BASE_W,
-        BASE_H,
-        PAD,
-        get_color(base_alpha),
-    )
-    ax.add_artist(patch)
-    blt = (bl[0] + MIDDLE_W / 2, ba_bl[1] - TEXT_V_D)
-    block_text(blt, "base_alpha")
-
     # out
-    for y, x in itertools.product(range(4), range(3)):
+    for y, x in itertools.product(range(3), range(3)):  # Adjusted to 3x3 for 9 'out' blocks
         weight_id, bl = out_block(
             x,
             y,

@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 from omegaconf import DictConfig, OmegaConf
 
 from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS
-
+from sd_webui_bayesian_merger.merger import NUM_OUTPUT_BLOCKS_XL
 
 class Bounds:
     @staticmethod
@@ -22,7 +22,7 @@ class Bounds:
         ranges = {}
         for greek_letter in greek_letters:
             block_names += [
-                f"block_{i}_{greek_letter}" for i in range(NUM_TOTAL_BLOCKS)
+                f"block_{i}_{greek_letter}" for i in range(NUM_OUTPUT_BLOCKS_XL)
             ] + [f"base_{greek_letter}"]
             ranges |= {b: (0.0, 1.0) for b in block_names} | OmegaConf.to_object(
                 custom_ranges
@@ -120,12 +120,12 @@ class Bounds:
 
         for greek_letter in greek_letters:
             w = []
-            for i in range(NUM_TOTAL_BLOCKS):
+            for i in range(NUM_OUTPUT_BLOCKS_XL):
                 block_name = f"block_{i}_{greek_letter}"
                 value = Bounds.get_value(params, block_name, frozen, groups)
                 w.append(value)
 
-            assert len(w) == NUM_TOTAL_BLOCKS
+            assert len(w) == NUM_OUTPUT_BLOCKS_XL
             weights[greek_letter] = w
 
             base_name = f"base_{greek_letter}"

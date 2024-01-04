@@ -8,7 +8,7 @@ import gradio as gr
 import safetensors.torch
 import torch
 from modules import script_callbacks, sd_models, shared
-from sd_meh.merge import NUM_TOTAL_BLOCKS, merge_methods, merge_models
+from sd_meh.merge import NUM_TOTAL_BLOCKS, NUM_TOTAL_BLOCKS_XL, merge_methods, merge_models
 
 MEMORY_DESTINATION = "memory"
 
@@ -32,6 +32,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             description="Unload current model before merging to save memory",
         ),
         merge_method: str = fastapi.Body(title="Merge method"),
+        sdxl: bool = fastapi.Body(False, title="SDXL option")
         model_a: str = fastapi.Body(title="Path to model A"),
         model_b: str = fastapi.Body(title="Path to model B"),
         model_c: str = fastapi.Body(None, title="Path to model C"),
@@ -116,9 +117,9 @@ def validate_merge_method(merge_method: str) -> None:
 
 def normalize_merge_args(base_alpha, base_beta, alpha, beta, model_a, model_b, model_c):
     if not alpha:
-        alpha = [base_alpha] * NUM_TOTAL_BLOCKS
+        alpha = [base_alpha] * NUM_TOTAL_BLOCKS_XL
     if not beta:
-        beta = [base_beta] * NUM_TOTAL_BLOCKS
+        beta = [base_beta] * NUM_TOTAL_BLOCKS_XL
 
     input_models = {
         "model_a": model_a,

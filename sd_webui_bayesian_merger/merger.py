@@ -20,6 +20,10 @@ NUM_MID_BLOCK = 1
 NUM_OUTPUT_BLOCKS = 12
 NUM_TOTAL_BLOCKS = NUM_INPUT_BLOCKS + NUM_MID_BLOCK + NUM_OUTPUT_BLOCKS
 
+NUM_INPUT_BLOCKS_XL = 9
+NUM_OUTPUT_BLOCKS_XL = 9
+NUM_TOTAL_BLOCKS_XL = NUM_INPUT_BLOCKS_XL + NUM_MID_BLOCK + NUM_OUTPUT_BLOCKS_XL
+
 MERGE_METHODS = dict(inspect.getmembers(merge_methods, inspect.isfunction))
 NUM_MODELS_NEEDED = {
     name: 3 if "c" in inspect.getfullargspec(fn)[0] else 2
