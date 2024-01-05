@@ -20,7 +20,7 @@ from sd_webui_bayesian_merger.scorer import AestheticScorer
 
 PathT = os.PathLike
 
-
+#maybe init params get_bounds sdxl
 @dataclass
 class Optimiser:
     cfg: DictConfig
@@ -34,6 +34,7 @@ class Optimiser:
         self.scorer = AestheticScorer(self.cfg, {}, {}, {})
         self.prompter = Prompter(self.cfg)
         self.iteration = 0
+        self.sdxl = self.cfg.sdxl 
 
     def start_logging(self) -> None:
         run_name = "-".join(self.merger.output_file.stem.split("-")[:-1])
@@ -63,6 +64,7 @@ class Optimiser:
             self.cfg.optimisation_guide.groups
             if self.cfg.guided_optimisation
             else None,
+            sdxl=self.sdxl
         )
 
     def sd_target_function(self, **params) -> float:
@@ -88,6 +90,7 @@ class Optimiser:
             self.cfg.optimisation_guide.groups
             if self.cfg.guided_optimisation
             else None,
+            sdxl=self.cfg.sdxl
         )
         self.merger.merge(weights, bases)
 

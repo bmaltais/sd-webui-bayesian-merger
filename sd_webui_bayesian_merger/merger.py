@@ -97,6 +97,7 @@ class Merger:
         bases: Dict,
         save_best: bool = False,
     ) -> None:
+        print("Merger - SDXL Flag:", self.cfg.sdxl)
         bases = {f"base_{k}": v for k, v in bases.items()}
         option_payload = {
             "merge_method": self.cfg.merge_mode,
@@ -112,7 +113,9 @@ class Merger:
             "unload_before": True,
             "re_basin": self.cfg.rebasin,
             "re_basin_iterations": self.cfg.rebasin_iterations,
+            "sdxl": self.cfg.sdxl,  # include the sdxl flag
         }
+        print("Option payload for merge request:", option_payload)
 
         print("Merging models")
         r = requests.post(

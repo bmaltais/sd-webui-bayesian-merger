@@ -19,12 +19,16 @@ class Bounds:
         custom_ranges: Dict[str, Tuple[float, float]] = None,
         sdxl: bool = False,
     ) -> Dict:
-        num_blocks = NUM_TOTAL_BLOCKS_XL if sdxl else NUM_TOTAL_BLOCKS
+        if sdxl:
+            block_count = NUM_TOTAL_BLOCKS_XL
+        else:
+            block_count = NUM_TOTAL_BLOCKS
+        print(f"Default bounds - sdxl: {sdxl}, block_count: {block_count}")
         block_names = []
         ranges = {}
         for greek_letter in greek_letters:
             block_names += [
-                f"block_{i}_{greek_letter}" for i in range(num_blocks)
+                f"block_{i}_{greek_letter}" for i in range(block_count)
             ] + [f"base_{greek_letter}"]
             ranges |= {b: (0.0, 1.0) for b in block_names} | OmegaConf.to_object(
                 custom_ranges
@@ -68,6 +72,7 @@ class Bounds:
         frozen_params: Dict[str, float] = None,
         custom_ranges: Dict[str, Tuple[float, float]] = None,
         groups: List[List[str]] = None,
+        sdxl: bool = False
     ) -> Dict:
         if frozen_params is None:
             frozen_params = {}
@@ -82,7 +87,7 @@ class Bounds:
         print("Custom Ranges:", custom_ranges)
         print("Groups:", groups)
 
-        bounds = Bounds.default_bounds(greek_letters, custom_ranges)
+        bounds = Bounds.default_bounds(greek_letters, custom_ranges, sdxl)
         not_frozen_bounds = Bounds.freeze_bounds(bounds, frozen_params)
         grouped_bounds = Bounds.group_bounds(not_frozen_bounds, groups)
         print("Bounds After Default Bounds:")
@@ -98,7 +103,7 @@ class Bounds:
         return bounds
 
     @staticmethod
-    def get_value(params, block_name, frozen, groups) -> float:
+    def get_value(params, block_name, frozen, groups, sdxl=False) -> float:
         if block_name in params:
             return params[block_name]
         if groups is not None:
@@ -121,23 +126,28 @@ class Bounds:
         groups: List[List[str]],
         sdxl: bool = False,
     ) -> Tuple[Dict[str, List[float]], Dict[str, List[float]]]:
-        num_blocks = NUM_TOTAL_BLOCKS_XL if sdxl else NUM_TOTAL_BLOCKS
+        if sdxl:
+            block_count = NUM_TOTAL_BLOCKS_XL
+        else:
+            block_count = NUM_TOTAL_BLOCKS
         if frozen is None:
             frozen = {}
         if groups is None:
             groups = []
 
+        print(f"Assemble params - sdxl: {sdxl}, block_count: {block_count}")
         weights = {}
         bases = {}
 
         for greek_letter in greek_letters:
             w = []
-            for i in range(num_blocks):
+            for i in range(block_count):
                 block_name = f"block_{i}_{greek_letter}"
-                value = Bounds.get_value(params, block_name, frozen, groups)
+                value = Bounds.get_value(params, block_name, frozen, groups, sdxl)
                 w.append(value)
 
-            assert len(w) == num_blocks
+            assert len(w) == block_count
+            print(f"Assemble params - sdxl: {sdxl}, greek_letter: {greek_letter}, num_weights: {len(w)}")
             weights[greek_letter] = w
 
             base_name = f"base_{greek_letter}"

@@ -53,6 +53,8 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             description="Number of keys to merge simultaneously. Only useful with device='cpu'",
         ),
     ):
+        print("API - SDXL Flag:", sdxl)
+        print("Received merge request with parameters:", locals())
         validate_merge_method(merge_method)
         alpha, beta, input_models, weights, bases = normalize_merge_args(
             base_alpha,
@@ -89,6 +91,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
                 work_device=work_device,
                 prune=prune,
                 threads=threads,
+                sdxl=sdxl,
             )
             if not isinstance(merged, dict):
                 merged = merged.to_dict()
@@ -115,11 +118,18 @@ def validate_merge_method(merge_method: str) -> None:
         raise fastapi.HTTPException(422, "Merge method is not defined")
 
 
-def normalize_merge_args(base_alpha, base_beta, alpha, beta, model_a, model_b, model_c):
+def normalize_merge_args(base_alpha, base_beta, alpha, beta, model_a, model_b, model_c, sdxl=False):
+    if sdxl:
+        block_count = NUM_TOTAL_BLOCKS_XL
+    else:
+        block_count = NUM_TOTAL_BLOCKS
+
+    print(f"normalize_merge_args - sdxl: {sdxl}, block_count: {block_count}")
+
     if not alpha:
-        alpha = [base_alpha] * NUM_TOTAL_BLOCKS_XL
+        alpha = [base_alpha] * block_count
     if not beta:
-        beta = [base_beta] * NUM_TOTAL_BLOCKS_XL
+        beta = [base_beta] * block_count
 
     input_models = {
         "model_a": model_a,
@@ -136,6 +146,7 @@ def normalize_merge_args(base_alpha, base_beta, alpha, beta, model_a, model_b, m
     }
 
     return alpha, beta, input_models, weights, bases
+
 
 
 def get_checkpoint_info(path: Path) -> sd_models.CheckpointInfo:
