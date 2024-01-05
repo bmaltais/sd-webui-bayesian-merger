@@ -12,6 +12,7 @@ class BayesOptimiser(Optimiser):
 
     def optimise(self) -> None:
         pbounds = self.init_params()
+        print(f"Initial Parameter Bounds: {pbounds}")
 
         # TODO: fork bayesian-optimisation and add LHS
         self.optimizer = BayesianOptimization(

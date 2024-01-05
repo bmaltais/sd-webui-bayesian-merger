@@ -66,6 +66,7 @@ class Optimiser:
         )
 
     def sd_target_function(self, **params) -> float:
+        print(f"Parameters for Optimization Iteration: {params}")
         def print_iteration_info(iteration_type: str):
             print(f"\n{iteration_type} - Iteration: {self.iteration}")
 
@@ -94,7 +95,7 @@ class Optimiser:
         scores, norm = self.score_images(images, gen_paths, payloads)
         avg_score = self.scorer.average_calc(scores, norm, self.cfg.img_average_type)
         self.update_best_score(bases, weights, avg_score)
-
+        print(f"Average Score for Iteration: {avg_score}")
         return avg_score
 
     def generate_images(self) -> Tuple[List, List, List]:
