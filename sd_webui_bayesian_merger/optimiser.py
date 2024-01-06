@@ -66,6 +66,8 @@ class Optimiser:
             else None,
             sdxl=self.sdxl
         )
+    # Print initial bounds  
+    print(f"Initial parameter bounds: {Bounds}")
 
     def sd_target_function(self, **params) -> float:
         print(f"Parameters for Optimization Iteration: {params}")
@@ -90,8 +92,10 @@ class Optimiser:
             self.cfg.optimisation_guide.groups
             if self.cfg.guided_optimisation
             else None,
-            sdxl=self.cfg.sdxl
+            sdxl=self.sdxl
         )
+        print(f"Assembled Weights for Merge: {weights}")
+        print(f"Assembled Bases for Merge: {bases}")
         self.merger.merge(weights, bases)
 
         images, gen_paths, payloads = self.generate_images()
