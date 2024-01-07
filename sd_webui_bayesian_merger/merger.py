@@ -1,5 +1,6 @@
 import inspect
 import sys
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
@@ -14,6 +15,7 @@ BETA_METHODS = [
     if "beta" in inspect.getfullargspec(fn)[0]
 ]
 
+logging.basicConfig(level=logging.INFO)
 
 #NUM_INPUT_BLOCKS = 12
 #NUM_MID_BLOCK = 1
@@ -36,9 +38,16 @@ class Merger:
     cfg: DictConfig
 
     def __post_init__(self):
+        self.validate_config()
         self.parse_models()
         self.create_model_out_name()
         self.create_best_model_out_name()
+        
+    def validate_config(self):
+        required_fields = ['model_a', 'model_b', 'merge_mode']
+        for field in required_fields:
+            if not getattr(self.cfg, field, None):
+                raise ValueError(f"Configuration missing required field: {field}")
 
     def parse_models(self):
         self.model_a = Path(self.cfg.model_a)
@@ -96,8 +105,11 @@ class Merger:
         weights: Dict,
         bases: Dict,
         save_best: bool = False,
+        #sdxl: bool = False,
     ) -> None:
-        print("Merger - SDXL Flag:", self.cfg.sdxl)
+        #print("Merger - SDXL Flag:", self.cfg.sdxl)
+        logging.debug(f"Device configuration: {self.cfg.device}")
+        logging.debug(f"Work device configuration: {self.cfg.work_device}")
         bases = {f"base_{k}": v for k, v in bases.items()}
         option_payload = {
             "merge_method": self.cfg.merge_mode,
@@ -115,11 +127,16 @@ class Merger:
             "re_basin_iterations": self.cfg.rebasin_iterations,
             "sdxl": self.cfg.sdxl,  # include the sdxl flag
         }
-        print("Option payload for merge request:", option_payload)
+        logging.info(f"Sending merge request with payload: {option_payload}")
 
-        print("Merging models")
-        r = requests.post(
-            url=f"{self.cfg.url}/bbwm/merge-models",
-            json=option_payload,
-        )
-        r.raise_for_status()
+        logging.info("Merging models")
+        try:
+            r = requests.post(url=f"{self.cfg.url}/bbwm/merge-models", json=option_payload)
+            r.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error during API request: {e}")
+            logging.error(f"Request payload: {option_payload}")
+            logging.error(f"Response content: {r.content}")
+            raise
+        logging.info(f"Merge request successful, response received")   
+     

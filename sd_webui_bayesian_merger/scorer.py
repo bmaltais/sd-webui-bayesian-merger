@@ -76,7 +76,7 @@ CLIP_MODEL = (
     "CLIP-ViT-L-14.pt"
 )
 BLIP_MODEL = (
-    "BLIP_Large.pth"
+    "BLIP_Large.safetensors"
 )
 HPSV2_MODEL = (
     "HPS_v2.1.pt"

@@ -2,6 +2,7 @@ import inspect
 import re
 from pathlib import Path
 from typing import Dict, List, Optional
+import logging
 
 import fastapi
 import gradio as gr
@@ -9,6 +10,9 @@ import safetensors.torch
 import torch
 from modules import script_callbacks, sd_models, shared
 from sd_meh.merge import NUM_TOTAL_BLOCKS, NUM_TOTAL_BLOCKS_XL, merge_methods, merge_models
+
+logger = logging.getLogger("api")
+logging.basicConfig(level=logging.INFO)
 
 MEMORY_DESTINATION = "memory"
 
@@ -53,8 +57,8 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             description="Number of keys to merge simultaneously. Only useful with device='cpu'",
         ),
     ):
-        print("API - SDXL Flag:", sdxl)
-        print("Received merge request with parameters:", locals())
+        logger.info("API - SDXL Flag: %s", sdxl)
+        logger.info("Received merge request with parameters: %s", locals())
         validate_merge_method(merge_method)
         alpha, beta, input_models, weights, bases = normalize_merge_args(
             base_alpha,
@@ -64,6 +68,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             model_a,
             model_b,
             model_c,
+            sdxl=sdxl,
         )
 
         model_a_info = get_checkpoint_info(Path(model_a))
@@ -101,6 +106,8 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             else:
                 save_model(merged, destination)
                 shared.refresh_checkpoints()
+        except Exception as e:
+            logger.error("An error occurred during the merge process: %s", e)    
 
         finally:
             if unload_before and (not load_in_memory or shared.sd_model is None):
@@ -124,7 +131,7 @@ def normalize_merge_args(base_alpha, base_beta, alpha, beta, model_a, model_b, m
     else:
         block_count = NUM_TOTAL_BLOCKS
 
-    print(f"normalize_merge_args - sdxl: {sdxl}, block_count: {block_count}")
+    logger.info("normalize_merge_args - sdxl: %s, block_count: %s", sdxl, block_count)
 
     if not alpha:
         alpha = [base_alpha] * block_count
@@ -182,7 +189,7 @@ def normalize_destination(
 
 
 def save_model(merged: Dict, path: Path):
-    print(f"Saving merge to {path}")
+    logger.info("Saving merge to %s", path)
     path.unlink(missing_ok=True)
     if path.suffix == ".safetensors":
         safetensors.torch.save_file(

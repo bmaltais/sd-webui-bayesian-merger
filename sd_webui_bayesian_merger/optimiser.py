@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
 import torch
+import logging
 
 from bayes_opt.logger import JSONLogger
 from hydra.core.hydra_config import HydraConfig
@@ -18,9 +19,11 @@ from sd_webui_bayesian_merger.merger import Merger
 from sd_webui_bayesian_merger.prompter import Prompter
 from sd_webui_bayesian_merger.scorer import AestheticScorer
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+
 PathT = os.PathLike
 
-#maybe init params get_bounds sdxl
 @dataclass
 class Optimiser:
     cfg: DictConfig
@@ -66,13 +69,9 @@ class Optimiser:
             else None,
             sdxl=self.sdxl
         )
-    # Print initial bounds  
-    print(f"Initial parameter bounds: {Bounds}")
 
     def sd_target_function(self, **params) -> float:
-        print(f"Parameters for Optimization Iteration: {params}")
-        def print_iteration_info(iteration_type: str):
-            print(f"\n{iteration_type} - Iteration: {self.iteration}")
+        logger.info(f"Parameters for Optimization Iteration: {params}")
 
         self.iteration += 1
         iteration_type = (
@@ -80,8 +79,9 @@ class Optimiser:
         )
 
         if self.iteration in {1, self.cfg.init_points + 1}:
-            print("\n" + "-" * 10 + f" {iteration_type} " + "-" * 10 + ">")
-        print_iteration_info(iteration_type)
+            logger.info("\n" + "-" * 10 + f" {iteration_type} " + "-" * 10 + ">")
+
+        logger.info(f"\n{iteration_type} - Iteration: {self.iteration}")
 
         weights, bases = self.bounds_initialiser.assemble_params(
             params,
@@ -94,15 +94,13 @@ class Optimiser:
             else None,
             sdxl=self.sdxl
         )
-        print(f"Assembled Weights for Merge: {weights}")
-        print(f"Assembled Bases for Merge: {bases}")
         self.merger.merge(weights, bases)
 
         images, gen_paths, payloads = self.generate_images()
         scores, norm = self.score_images(images, gen_paths, payloads)
         avg_score = self.scorer.average_calc(scores, norm, self.cfg.img_average_type)
         self.update_best_score(bases, weights, avg_score)
-        print(f"Average Score for Iteration: {avg_score}")
+        logger.info(f"Average Score for Iteration: {avg_score}")
         return avg_score
 
     def generate_images(self) -> Tuple[List, List, List]:
@@ -117,21 +115,21 @@ class Optimiser:
         return images, gen_paths, payloads
 
     def score_images(self, images, gen_paths, payloads) -> List[float]:
-        print("\nScoring")
+        logger.info("\nScoring")
         return self.scorer.batch_score(images, gen_paths, payloads, self.iteration)
 
     def update_best_score(self, bases, weights, avg_score):
-        print(f"{'-'*10}\nRun score: {avg_score}")
+        logger.info(f"{'-'*10}\nRun score: {avg_score}")
         weights_strings = {
             gl: ",".join(map(str, weights[gl])) for gl in self.merger.greek_letters
         }
 
         for gl in self.merger.greek_letters:
-            print(f"\nrun base_{gl}: {bases[gl]}")
-            print(f"run weights_{gl}: {weights_strings[gl]}")
+            logger.info(f"\nrun base_{gl}: {bases[gl]}")
+            logger.info(f"run weights_{gl}: {weights_strings[gl]}")
 
         if avg_score > self.best_rolling_score:
-            print("\n NEW BEST!")
+            logger.info("\n NEW BEST!")
             self.best_rolling_score = avg_score
             Optimiser.save_best_log(bases, weights_strings)
 
@@ -160,15 +158,15 @@ class Optimiser:
             HydraConfig.get().runtime.output_dir,
             f"{self.log_name}-unet.png",
         )
-        print("\n" + "-" * 10 + "> Done!")
-        print("\nBest run:")
+        logger.info("\n" + "-" * 10 + "> Done!")
+        logger.info("\nBest run:")
 
         best_weights_strings = {}
         for gl in self.merger.greek_letters:
-            print(f"\nbest base_{gl}: {best_bases[gl]}")
-            print(f"best weights_{gl}:")
+            logger.info(f"\nbest base_{gl}: {best_bases[gl]}")
+            logger.info(f"best weights_{gl}:")
             w_str = ",".join(list(map(str, best_weights[gl])))
-            print(w_str)
+            logger.info(w_str)
             best_weights_strings[gl] = w_str
 
         Optimiser.save_best_log(best_bases, best_weights_strings)
@@ -181,12 +179,12 @@ class Optimiser:
         )
 
         if self.cfg.save_best:
-            print("Merging best model")
+            logger.info("Merging best model")
             self.merger.merge(best_weights, best_bases, save_best=True)
 
     @staticmethod
     def save_best_log(bases: Dict, weights_strings: Dict) -> None:
-        print("Saving best.log")
+        logger.info("Saving best.log")
         with open(
             Path(HydraConfig.get().runtime.output_dir, "best.log"),
             "w",
