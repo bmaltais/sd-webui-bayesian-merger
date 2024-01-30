@@ -122,10 +122,11 @@ class Merger:
             "prune": self.cfg.prune,
             "threads": self.cfg.threads,
             "destination": str(self.best_output_file) if save_best else "memory",
-            "unload_before": True,
+            "unload_before": self.cfg.unload_before,  # Adjusted to use config
             "re_basin": self.cfg.rebasin,
             "re_basin_iterations": self.cfg.rebasin_iterations,
             "sdxl": self.cfg.sdxl,  # include the sdxl flag
+            "cache": self.cfg.cache_merge,
         }
         logging.info(f"Sending merge request with payload: {option_payload}")
 

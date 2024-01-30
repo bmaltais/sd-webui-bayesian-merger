@@ -15,6 +15,7 @@ logger = logging.getLogger("api")
 logging.basicConfig(level=logging.INFO)
 
 MEMORY_DESTINATION = "memory"
+persistent_cache: Optional[Dict] = None
 
 
 def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
@@ -33,7 +34,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
         unload_before: bool = fastapi.Body(
             False,
             title="Unload before merging",
-            description="Unload current model before merging to save memory",
+            description="Unload current model before merging to save memory.",
         ),
         merge_method: str = fastapi.Body(title="Merge method"),
         sdxl: bool = fastapi.Body(False, title="SDXL option"),
@@ -56,6 +57,8 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             title="Number of threads",
             description="Number of keys to merge simultaneously. Only useful with device='cpu'",
         ),
+        cache: bool = fastapi.Body(False, title="Cache intermediate merge values"),
+        save_iterations: bool = fastapi.Body(False, title="Save Iterations"),
     ):
         logger.info("API - SDXL Flag: %s", sdxl)
         logger.info("Received merge request with parameters: %s", locals())
@@ -70,6 +73,10 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             model_c,
             sdxl=sdxl,
         )
+        
+        global persistent_cache
+        if cache and persistent_cache is None:
+            persistent_cache = {}
 
         model_a_info = get_checkpoint_info(Path(model_a))
         load_in_memory = destination == MEMORY_DESTINATION
@@ -97,6 +104,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
                 prune=prune,
                 threads=threads,
                 sdxl=sdxl,
+                cache=persistent_cache,
             )
             if not isinstance(merged, dict):
                 merged = merged.to_dict()
@@ -106,14 +114,12 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             else:
                 save_model(merged, destination)
                 shared.refresh_checkpoints()
-        except Exception as e:
-            logger.error("An error occurred during the merge process: %s", e)    
 
         finally:
             if unload_before and (not load_in_memory or shared.sd_model is None):
                 sd_models.reload_model_weights()
-
-
+                
+# Ensure the callback is registered correctly
 script_callbacks.on_app_started(on_app_started)
 
 
@@ -157,7 +163,7 @@ def normalize_merge_args(base_alpha, base_beta, alpha, beta, model_a, model_b, m
 
 
 def get_checkpoint_info(path: Path) -> sd_models.CheckpointInfo:
-    checkpoint_aliases = getattr(sd_models, "checkpoint_alisases", None)
+    checkpoint_aliases = getattr(sd_models, "checkpoint_aliases", None)
     if checkpoint_aliases is None:  # we are on vlad webui
         checkpoint_aliases = getattr(sd_models, "checkpoint_aliases")
 
