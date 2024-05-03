@@ -76,3 +76,7 @@ best_precision: 16 # 32
 
 draw_unet_weights: False
 draw_unet_base_alpha: False
+
+sdxl: True
+unload_before: False
+cache_merge: True

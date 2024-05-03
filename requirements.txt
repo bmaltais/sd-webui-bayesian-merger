@@ -10,11 +10,14 @@ matplotlib
 seaborn
 hyperopt
 pytest
+pytorch_lightning
 transformers
 numpy
 hydra-core
-sd-meh==0.9.5
-lightgbm 
+# sd-meh==0.9.5
+sd-meh @ git+https://github.com/s1dlx/meh.git@f8d8f48f63b414160f633e5ba6f22842a44f7758
+lightgbm
+tensordict==0.2.0
 scikit-learn
 openai-clip
 tensordict
